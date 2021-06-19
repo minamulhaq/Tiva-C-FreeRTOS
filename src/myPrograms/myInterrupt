@@ -1,0 +1,89 @@
+#include "bsp.h"
+#include "TM4C123GH6PM.h"
+/* #include "cmsis_gcc.h" */
+#include "system_TM4C123GH6PM.h"
+/* #include "lm4f120h5qr.h" */
+#define SYS_CLOCK_HZ 16000000U
+
+
+
+void Timer0A_Handler(void){
+	TIMER0->ICR = 0x01;
+	GPIOF_AHB->DATA ^= (1<<2);
+}
+
+void PortF_Init(void){
+  // only PF0 needs to be unlocked, other bits can't be locked
+  SYSCTL->RCGCGPIO = 0x20;
+  GPIOF->LOCK = 0x4C4F434B;   // 2) unlock GPIO Port F
+  GPIOF->CR = 0x1F;           // allow changes to PF4-0
+  GPIOF->AMSEL = 0x00;        // 3) disable analog on PF
+  GPIOF->PCTL = 0x00000000;   // 4) PCTL GPIO on PF4-0
+  GPIOF->DIR = 0x0E;          // 5) PF4,PF0 in, PF3-1 out
+  GPIOF->AFSEL = 0x00;        // 6) disable alt funct on PF7-0
+  GPIOF->PUR = 0x11;          // enable pull-up on PF0 and PF4
+  GPIOF->DEN = 0x1F;          // 7) enable digital I/O on PF4-0
+}
+
+void Timer0A_Init(){ 
+  SYSCTL->RCGCTIMER = 0x01; // 0) activate timer0
+  TIMER0->CTL &= ~0x00000001;     // 1) disable timer0A during setup
+  TIMER0->CFG = 0x00000000;       // 2) configure for 16-bit timer mode
+  TIMER0->TAMR = 0x00000002;      // 3) configure for periodic mode
+  TIMER0->TAILR = 0x00F42400/4;         // 4) reload value
+  TIMER0->ICR = 0x00000001;       // 6) clear timer0A timeout flag
+  TIMER0->IMR |= 0x00000001;      // 7) arm timeout interrupt
+  /* NVIC_PRI4_R = (NVIC_PRI4_R&0x00FFFFFF)|0x40000000; // 8) priority 2 */
+  NVIC_EnableIRQ(TIMER0A_IRQn);
+  NVIC_SetPriority(TIMER0B_IRQn, 0x02);
+  /* NVIC_EN0_R |= NVIC_EN0_INT19;    // 9) enable interrupt 19 in NVIC */
+  TIMER0->CTL |= 0x00000001;      // 10) enable timer0A
+}
+void GPIOFBUTTONINT(void){
+	GPIOF->IS = 0x00; // EDGE SENSItive
+	GPIOF->IBE = 0x00; // Detect edge
+	GPIOF->IM =  (1<<4) | (1<<0);
+	NVIC_EnableIRQ(GPIOF_IRQn);
+	NVIC_SetPriority(GPIOF_IRQn, 0x03);
+	__enable_irq();
+}
+
+void Task2(void){
+	GPIOF->DATA_Bits[LED_RED] ^= LED_RED;
+	for(int i = 0 ; i < 1000; i++);
+}
+
+void GPIOPortF_ISR(){
+	GPIOF->ICR = (1<<4) | 1;
+	Task2();
+}
+
+
+
+int main() {
+    /* BSP_init(); */
+	/* SysTick->CTRL = (1U << 2) | (1U << 1) | 1U; */
+	/* SysTick->VAL = 0x00; */
+	/* SysTick->LOAD =  SYS_CLOCK_HZ/2 -1U; */
+	/* __enable_irq(); */
+
+	/* while(1){ */
+	/* } */
+
+	PortF_Init();
+	Timer0A_Init();
+	GPIOFBUTTONINT();
+	while(1){
+	}
+
+
+	
+
+
+
+	/* PortF_Init(); */
+	/* GPIOF->DATA = (1<<2); */
+	/* Timer0A_Init(); */
+
+	return 0;
+}
