@@ -1,0 +1,5 @@
+.vscode
+bin
+obj
+CMakeLists.txt
+cmake.sh
