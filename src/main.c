@@ -1,36 +1,48 @@
+#include <stdbool.h>
 #include <stdint.h>
-#include <FreeRTOS.h>
-#include <task.h>
+#include "bsp.h"
+#include "miros.h"
+#include "TM4C123GH6PM.h"
 
-void vPeriodicTask(void *pvParameters)
-{
-	
-	// Establish the task's period.
-	const TickType_t xDelay = pdMS_TO_TICKS(1000);
-	TickType_t xLastWakeTime = xTaskGetTickCount();
-	
-	for (;;) {
+#include "FreeRTOS.h"
+#include "task.h"
 
-		
-		// Block until the next release time.
-		vTaskDelayUntil(&xLastWakeTime, xDelay);
-	}
-
-}	
-
-
-
-int main()
-{
-	
-	xTaskCreate(vPeriodicTask, "My Task", 256, NULL, 1, NULL);
-
-	// Startup of the FreeRTOS scheduler.  The program should block here.  
-	vTaskStartScheduler();
-	
-	// The following line should never be reached.  Failure to allocate enough
-	//	memory from the heap would be one reason.
-	for (;;);
-	
+uint32_t stack_blinky1[40];;
+OSThread blinky1;
+void main_blinky1() {
+    while (1) {
+        BSP_ledGreenOn();
+        BSP_delay(BSP_TICKS_PER_SEC / 4U);
+        BSP_ledGreenOff();
+        BSP_delay(BSP_TICKS_PER_SEC * 3U / 4U);
+    }
 }
+
+uint32_t stack_blinky2[40];
+OSThread blinky2;
+void main_blinky2() {
+    while (1) {
+        BSP_ledBlueOn();
+        BSP_delay(BSP_TICKS_PER_SEC / 2U);
+        BSP_ledBlueOff();
+        BSP_delay(BSP_TICKS_PER_SEC / 3U);
+    }
+}
+
+
+/* background code: sequential with blocking version */
+int main() {
+    BSP_init();
+    /* while (1) { */
+    /*     BSP_ledRedOn(); */
+    /*     BSP_delay(BSP_TICKS_PER_SEC * 2); */
+    /*     BSP_ledRedOff(); */
+    /*     BSP_delay(BSP_TICKS_PER_SEC / 1); */
+    /* } */
+
+	xTaskCreate(main_blinky1, "My", 200, NULL, 1, NULL);
+	vTaskStartScheduler();
+    //return 0;
+}
+
 

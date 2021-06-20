@@ -3,3 +3,6 @@ bin
 obj
 CMakeLists.txt
 cmake.sh
+.cache
+.clangd
+compile_commands.json

@@ -219,6 +219,9 @@ void Default_Handler(void)
 {
   while (1)
   {
+	  BSP_ledRedOn();
+	  BSP_delay(BSP_TICKS_PER_SEC /2);
+	  BSP_ledRedOff();
     //does literally nothing except infinitely loop
   }
 }
